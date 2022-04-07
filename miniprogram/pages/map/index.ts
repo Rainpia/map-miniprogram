@@ -1,3 +1,4 @@
+// 设置背景语音信息
 const backgroundAudioManager = wx.getBackgroundAudioManager();
 backgroundAudioManager.title = "景点播报";
 backgroundAudioManager.epname = "景点播报";
@@ -5,7 +6,7 @@ backgroundAudioManager.singer = "主持人";
 backgroundAudioManager.coverImgUrl =
   "http://y.gtimg.cn/music/photo_new/T002R300x300M000003rsKF44GyaSk.jpg?max_age=2592000";
 
-// 天府软件园b区5栋区域
+// 天府软件园b区5栋区域坐标
 const INIT_POLYGON = [
   {
     latitude: 30.54635991972162,
@@ -41,8 +42,13 @@ Page({
         strokeWidth: 2,
       },
     ],
+
+    // 是否在附近
+    isInNear: false,
   },
-  onLoad: function () {
+
+  // 获取当前地图的中心坐标
+  getCurrentCenter() {
     wx.getLocation({
       type: "gcj02",
       altitude: "false",
@@ -53,34 +59,62 @@ Page({
             longitude: result.longitude,
           },
         });
-
-        const r = this.getDistance(
-          result.latitude,
-          result.longitude,
-          INIT_POLYGON[0].latitude,
-          INIT_POLYGON[0].longitude
-        );
-
-        console.log("xxxxxxx", `${r}`);
       },
       fail: () => {},
       complete: () => {},
     });
+  },
 
-    this.location();
+  // 获取用户实时位置坐标
+  getRealTimePosition() {
+    const _locationChangeFn = (result: any) => {
+      console.log("location change", result);
 
-    backgroundAudioManager.onPlay(() => {
-      console.log("play");
+      const isIn = this.isInPolygon(result);
+
+      if (isIn && !this.data.isInNear) {
+        this.onInCallback();
+      }
+
+      if (!isIn && this.data.isInNear) {
+        this.onOutCallback();
+      }
+    };
+    wx.startLocationUpdate({
+      success: (res) => {
+        wx.onLocationChange(_locationChangeFn);
+      },
+      fail: (err) => {},
     });
   },
 
-  onCallback() {
-    console.log("进入软件园b区5栋范围内");
+  onLoad: function () {
+    this.getCurrentCenter();
+
+    this.getRealTimePosition();
+  },
+
+  // 在附近时回调函数
+  onInCallback() {
+    this.setData({
+      isInNear: true,
+    });
+    console.log("进入软件园b区5栋范围内, 播放音频");
     // 设置了 src 之后会自动播放
     backgroundAudioManager.src =
       "https://xiyoutianxia.oss-cn-hangzhou.aliyuncs.com/upload/000.mp3";
   },
 
+  // 退出附近时回调函数
+  onOutCallback() {
+    this.setData({
+      isInNear: false,
+    });
+    console.log("退出软件园b区5栋范围内, 停止播放音频");
+    backgroundAudioManager.stop();
+  },
+
+  // 判断实时位置是否在软件园b区5栋附近
   isInPolygon(result: any) {
     let isIn = false;
     for (let i = 0; i < INIT_POLYGON.length; i++) {
@@ -90,7 +124,8 @@ Page({
         INIT_POLYGON[i].latitude,
         INIT_POLYGON[i].longitude
       );
-      if (Number(r) < 200) {
+
+      if (Number(r) < 91) {
         isIn = true;
       }
     }
@@ -98,46 +133,12 @@ Page({
     return isIn;
   },
 
-  // 获取位置信息
-  getWxLocation() {
-    wx.showLoading({
-      title: "定位中...",
-      mask: true,
-    });
-    return new Promise((resolve: any, reject) => {
-      const _locationChangeFn = (result: any) => {
-        console.log("location change", result);
-        wx.hideLoading();
-
-        if (this.isInPolygon(result)) {
-          this.onCallback();
-        }
-      };
-      wx.startLocationUpdate({
-        success: (res) => {
-          wx.onLocationChange(_locationChangeFn);
-          resolve();
-        },
-        fail: (err) => {
-          reject();
-        },
-      });
-    });
-  },
-
-  async location() {
-    const that = this;
-    try {
-      await that.getWxLocation();
-    } catch (error) {
-      return;
-    }
-  },
-
   Rad(d: number) {
     //根据经纬度判断距离
     return (d * Math.PI) / 180.0;
   },
+
+  // 获取两个坐标之间的距离
   getDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
     // lat1用户的纬度
     // lng1用户的经度
