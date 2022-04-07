@@ -1,0 +1,7 @@
+.show-map-container {
+  padding: 30rpx;
+  .map {
+    width: calc(100vw - 60rpx);
+    height: 50vh;
+  }
+}

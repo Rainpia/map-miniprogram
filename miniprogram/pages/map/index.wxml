@@ -1,0 +1,3 @@
+<view class="show-map-container">
+      <map class="map" polyline="{{polyline}}" show-location="{{true}}"  polygons="{{polygons}}" latitude="{{current.latitude}}"  longitude="{{current.longitude}}" scale="18"  ></map>
+</view>
