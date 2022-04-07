@@ -35,23 +35,23 @@ Geo.calTwoPointsLenth = function (
  * 经纬度点
  * gps点
  */
-Geo.Point = {
-  constructor(x: number, y: number) {
-    this.x = x;
-    this.y = y;
-  },
-};
+Geo.Point = function(x: number, y: number) {
+  this.x = x;
+  this.y = y;
+}
 
 /**
  * 多边形面区域
  */
-Geo.Polygon = {
+class Polygon {
+  array: any = []
+  center: any
   constructor(points: any[]) {
     this.array = points;
     if (this.array.length < 3)
       throw new Error("Polygon formation requires at least three points");
     this._calCenter();
-  },
+  }
 
   /**
    * 计算外接矩形范围
@@ -75,7 +75,7 @@ Geo.Polygon = {
       boundsMinX + (boundsMaxX - boundsMinX) / 2,
       boundsMinY + (boundsMaxY - boundsMinY) / 2
     );
-  },
+  }
 
   /**
    * 计算某个点是否在一个多边形内
@@ -91,7 +91,7 @@ Geo.Polygon = {
       return this.containsPoint(point);
     }
     return false;
-  },
+  }
 
   /**
    * 判断一个点是否在该多边形中
@@ -144,7 +144,7 @@ Geo.Polygon = {
       }
     }
     return (hits & 1) != 0;
-  },
+  }
 };
 
 /**
@@ -171,7 +171,7 @@ Geo.toPolygon = function (array: number[]) {
     let y = array[i * 2 + 1];
     list.push(new Geo.Point(x, y));
   }
-  return new Geo.Polygon(list);
+  return new Polygon(list);
 };
 
 export default Geo;
